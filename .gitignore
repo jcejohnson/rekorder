@@ -1,2 +1,4 @@
-*.pyc
+*.egg-info
 *.json
+*.pyc
+venv

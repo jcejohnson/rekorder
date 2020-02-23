@@ -14,10 +14,6 @@ class MethodException(Device):
     __call__() method which is kind of the whole point of Decorator.
   '''
 
-  @staticmethod
-  def playback_instance(cls, mode, tune, *args, **kwargs):
-    return MethodException(mode=mode, **tune['data'])
-
   def __init__(self, *args, **kwargs):
     super().__init__(*args, **kwargs)
 

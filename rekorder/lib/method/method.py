@@ -78,7 +78,7 @@ class MethodPassRecorder(MethodParameters):
   @staticmethod
   def playback_instance(cls, *args, **kwargs):
     obj = MethodParameters.playback_instance(cls, *args, **kwargs)
-    obj.args = ["<{}>".format(obj.recorder)] + obj.args
+    obj.args = ['<Recorder>'] + obj.args
     return obj
 
   def invoke(self):

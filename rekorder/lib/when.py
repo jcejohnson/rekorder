@@ -19,3 +19,7 @@ class When(Enum):
     if string.startswith(When.__name__):
       return When[string.replace(When.__name__, '')[1:]]
     raise Exception("Cannot convert [{}] to When.".format(string))
+
+  @staticmethod
+  def recordable_data(obj):
+    return str(obj)

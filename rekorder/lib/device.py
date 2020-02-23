@@ -1,6 +1,7 @@
 
 import logging
 
+from .tune import Tune
 from .what import What
 
 logger = logging.getLogger(__name__)
@@ -9,6 +10,10 @@ logger = logging.getLogger(__name__)
 class Device:
   '''A thing that can be recorded, played back or described.
   '''
+
+  @staticmethod
+  def playback_instance(cls, *args, **kwargs):
+    return cls(*args, **kwargs)
 
   def __init__(self, *args, **kwargs):
 
@@ -30,9 +35,6 @@ class Device:
         raise Exception("Mismatch between our mode [{}]"
                         "and our recorder's mode [{}]".format(
                             self.mode, self.record.mode))
-
-    # Valid recording/playback states for the device
-    self.states = []
 
     # A tune to record, playback or describe (if provided)
     self.tune = kwargs.get('tune', None)
@@ -56,8 +58,6 @@ class Device:
   def _init_recordable(self, *args, **kwargs):
     if not self.recorder:
       raise Exception("Recorder required in mode [{}].".format(self.mode))
-    self.states.append('recording')
-    self.timestamp = self.recorder.timestamp()
 
   def _init_playable(self, *args, **kwargs):
     pass
@@ -85,7 +85,15 @@ class Device:
 
       Args:
         tunes (dict): Stuff to record.
-        when (When): When to record stuff.
+        when (When): When stuff is recorded.
     '''
-    tunes.update({'when': when})
-    self.recorder.record(device=self, tunes=tunes)
+    print('FIXME TOO')
+    tune = Tune(device=self, notes=tunes, when=when)
+    self.recorder.record(tune=tune)
+
+  def recordable(self, track_title):
+    '''Is this device recordable for the named track?
+        Almost all devices are recordable in he 'recording' track, so that's
+        our default.
+    '''
+    return track_title == 'recording'

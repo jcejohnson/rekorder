@@ -6,6 +6,7 @@ from functools import wraps
 
 from ..device import Device
 from ..timestamp import Timestamp
+from ..tune import Tune
 from ..when import When
 
 
@@ -49,19 +50,14 @@ class Decorator(Device):
     '''Construct a playback instance of `cls`.
     '''
 
-    obj = cls(*args, **kwargs)
+    obj = Device.playback_instance(cls, *args, **kwargs)
 
-    # The tune provided on playback is the entire recorded tune.
-    tune = kwargs['tune']
-    obj.timestamp = Timestamp(**tune['timestamp'])
-
-    # The tune we provided to the recorder is available as `data`.
-    data = tune['data']
-    obj.when = When.map(data['when'])
+    obj.timestamp = kwargs['timestamp']
+    obj.when = When.map(kwargs['when'])
 
     # A Decorator's purpose is to record data about a function so, let's go
     # find the function we recorded.
-    function = data['function']
+    function = kwargs['function']
 
     module, name = function['module'], function['name']
     file = function.get('file', None)
@@ -174,26 +170,41 @@ class Decorator(Device):
     '''
     pass
 
+  def pre_invoke(self):
+    pass
+
   def invoke(self):
     '''Invoke the wrapped function.
     '''
-    return self.function(*self.args, **self.kwargs)
+    self.pre_invoke()
+    rval = self.function(*self.args, **self.kwargs)
+    # Note that other wrapped functions may be called by self.function()
+    # before we find ourselves back here.
+    rval = self.post_invoke(rval)
+    return rval
 
-  def record(self, tunes, when):
+  def post_invoke(self, rval):
+    return rval
+
+  def pre_record(self, tune):
+    pass
+
+  def record(self, tune):
     '''Delegate to our Recorder.
 
       The Recorder acts as an intermediary between ourself and the recording
       medium (i.e. - the Cassette). This is consistent with the Real World and
       also gives the Recorder an opportunity to modify the data (tunes) we
       provide before committing them to tape if it wants.
-
-      Args:
-        tunes (dict): Stuff to record.
-        when (When): When the tunes were collected.
     '''
+    if not tune:
+      return
+    self.pre_record(tune=tune)
+    self.recorder.record(tune=tune)
+    self.post_record(tune=tune)
 
-    tunes.update({'when': when})
-    self.recorder.record(device=self, tunes=tunes)
+  def post_record(self, tune):
+    pass
 
   def silence(self, *args, **kwargs):
     '''Utility method for derivatives that want to record silence for one or
@@ -221,17 +232,25 @@ class Decorator(Device):
         self.kwargs = kwargs
 
         if when == When.BEFORE:
-          self.record(tunes=self.before(**moar), when=When.BEFORE)
+          tune = Tune(device=self, notes=self.before(**moar), when=When.BEFORE)
         elif when == When.AROUND:
-          self.record(tunes=self.around(when=When.AFTER, **moar), when=When.BEFORE)
+          tune = Tune(device=self, notes=self.around(when=When.BEFORE, **moar), when=When.BEFORE)
+        else:
+          tune = None
+
+        self.record(tune=tune)
 
         self.rval = self.invoke()
         # Note that self.result will be undefined if self.invoke() throws an exception.
 
         if when == When.AFTER:
-          self.record(tunes=self.after(**moar), when=When.AFTER)
+          tune = Tune(device=self, notes=self.after(**moar), when=When.BEFORE)
         elif when == When.AROUND:
-          self.record(tunes=self.around(when=When.AFTER, **moar), when=When.AFTER)
+          tune = Tune(device=self, notes=self.around(when=When.AFTER, **moar), when=When.AFTER)
+        else:
+          tune = None
+
+        self.record(tune=tune)
 
         self.outtro(**moar)
 

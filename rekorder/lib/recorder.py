@@ -10,7 +10,7 @@ from .method import Method
 from .method import MethodParameters
 from .method import MethodReturn
 from .repository import Repository
-from .timestamp import Timestamp
+from .tune import Tune
 from .what import What
 from .when import When
 
@@ -79,10 +79,6 @@ class Recorder(RecordableDeviceManager, Device):
   def __save_recorder(recorder):
     Recorder.__recorders[recorder.name] = recorder
 
-  @staticmethod
-  def playback_instance(cls, mode, tune, *args, **kwargs):
-    return Recorder(mode=mode, **tune['data'])
-
   def __init__(self, *args, **kwargs):
     '''Construct the Recorder.
 
@@ -102,10 +98,9 @@ class Recorder(RecordableDeviceManager, Device):
     self.name = kwargs['name']
 
     if self.mode == What.RECORD:  # Record mode
-      self.states.append('header')
 
-      self.cassette = Cassette(*args, timestamp=self.timestamp(), recorder=self, **kwargs)
-      self.record(device=self, tunes={'name': self.name})
+      self.cassette = Cassette(*args, recorder=self, **kwargs)
+      self.record(tune=Tune(device=self, notes={'name': self.name}))
 
     elif self.mode == What.DESCRIBE:
       pass
@@ -120,29 +115,28 @@ class Recorder(RecordableDeviceManager, Device):
     # Add ourselves to the dict of named recorders
     Recorder.__save_recorder(self)
 
-  def record(self, device, tunes):
-    '''Record some tunes on a cassette for later playback.
+  def record(self, tune):
+    '''Record a tune on a cassette for later playback.
 
-      This method is typically used by Devices when they wan to
-      record something interesting on the Recorder's Cassette instance.
-      It _can_ be used directly but that is discouraged.
+        Delegates to our cassette so that the recording medium is not exposed
+        directly to the devices.
 
-      Args:
-        device (Device): A recordable Device capable of producing tunes.
-        tunes (dict): A dict of interesting information (tunes) to be recorded.
+        This method is typically used by Devices when they want to
+        record something interesting on the Recorder's Cassette instance.
+        It _can_ be used directly but that is discouraged.
     '''
-    self.cassette.record(device=device, tunes=tunes, timestamp=self.timestamp())
+
+    self.cassette.record(tune=tune)
 
   # Manage the recording lifecycle
 
-  def begin_recording(self):
-    self.cassette.begin_recording()
+  def next_track(self):
+    '''Move to the next track on the recording medium.
 
-  def end_recording(self):
-    self.cassette.end_recording()
-
-  def timestamp(self):
-    return Timestamp()
+        Delegates to our cassette so that the recording medium is not exposed
+        directly to the devices.
+    '''
+    self.cassette.next_track()
 
   # When used as a callable object
 
@@ -212,8 +206,33 @@ class Recorder(RecordableDeviceManager, Device):
     return "{} name=[{}] mode=[{}]".format(
         self.__class__.__name__, self.name, self.mode)
 
+  def recordable(self, track_title):
+    '''A Recorder can only record its information to the header track.
+    '''
+    return track_title == 'header'
 
-class RecordingBegin(MethodParameters):
+
+class RecordingManager:
+
+  # Decorator
+
+  def pre_record(self, *args, **kwargs):
+    '''Before our tunes have been recorded, tell the Recorder to move to the
+        next track. This will put our data into the 'entry' track.
+    '''
+    self.recorder.next_track()
+
+  def post_record(self, *args, **kwargs):
+    '''Before our tunes have been recorded, tell the Recorder to move to the
+        next track. This will put our data into the 'recording' track.
+        We have to do this here because the wrapped function may invoke other
+        wrapped functions and we need to be sure that their tunes are on the
+        'recording' track.
+    '''
+    self.recorder.next_track()
+
+
+class RecordingBegin(RecordingManager, MethodParameters):
   '''Declare the beginning of a recording.
 
       Every recording must have one of these.
@@ -235,20 +254,17 @@ class RecordingBegin(MethodParameters):
   def describe_device(self):
     return super().describe_device() + " @ [{}]".format(self.timestamp.localtime)
 
-  # MethodParameters
-
-  def intro(self, **moar):
-    '''This is called immediately upon entering the function wrapper.
-        Its return value is not recorded.
+  def recordable(self, track_title):
+    '''RecordingBegin can only record its information to the header track.
     '''
-    self.recorder.begin_recording()
+    return track_title == 'entry'
 
   def __call__(self, function):
     # Only allow When.BEFORE. Do not allow parameters.
     return super().__call__(function=function, when=When.BEFORE)
 
 
-class RecordingEnd(MethodReturn):
+class RecordingEnd(RecordingManager, MethodReturn):
   '''Declare the end of a recording.
 
       This is optional.
@@ -270,10 +286,7 @@ class RecordingEnd(MethodReturn):
   def describe_device(self):
     return super().describe_device() + " @ [{}]".format(self.timestamp.localtime)
 
-  # MethodReturn
-
-  def outtro(self, **moar):
-    '''This is called immediately before returning from function wrapper.
-        Its return value is not recorded.
+  def recordable(self, track_title):
+    '''RecordingBegin can only record its information to the header track.
     '''
-    self.recorder.end_recording()
+    return track_title == 'exit'

@@ -2,7 +2,6 @@
 import json
 
 from .device import Device
-from .manager import RecordableDeviceManager
 from .medium import RecordingMedium
 from .track_manager import TrackManager
 from .tune import Tune
@@ -39,38 +38,63 @@ class Cassette(RecordingMedium, Device):
     self.output = kwargs['output'] if 'output' in kwargs else None
 
     if self.mode == What.RECORD:
+      self._init_for_record(*args, **kwargs)
 
-      self._json_kwargs = {'sort_keys': True, 'indent': 2}
-      self._track_manager = TrackManager(mode=self.mode)
+    elif self.mode == What.DESCRIBE:
+      self._init_for_describe(*args, **kwargs)
 
-      # Device
+    elif self.mode == What.PLAYBACK:
+      self._init_for_playback(*args, **kwargs)
 
-      tune = Tune(
-          device=self,
-          notes={'input': self.input, 'output': self.output}
-      )
+    else:
+      raise Exception("Unsupported mode [{}]".format(self.mode))
 
-      self.record(tune)
+  def _init_for_record(self, *args, **kwargs):
 
-    elif self.mode in [What.DESCRIBE, What.PLAYBACK]:
+    self._json_kwargs = {'sort_keys': True, 'indent': 2}
+    self.track_manager = TrackManager(mode=self.mode)
 
-      # When we are constructed via playback_instance() during playback
-      # self.input will be None because there was no input provided in record
-      # mode.
-      if self.input:
-        with open(self.input, 'r') as f:
-          tracks = json.load(f)
-          self._track_manager = TrackManager.playback_instance(tracks, mode=self.mode)
+    # Device
 
-  @property
-  def tracks(self):
-    return self._track_manager.tracks
+    tune = Tune(
+        device=self,
+        notes={'input': self.input, 'output': self.output}
+    )
 
-  def next_track(self):
-    '''Delegate to the track manager so that we don't expose the track manager
-        to the recordable devices.
-    '''
-    self._track_manager.next
+    self.record(tune)
+
+  def _init_for_describe(self, *args, **kwargs):
+    self._init_for_playback(*args, **kwargs)
+
+  def _init_for_playback(self, *args, **kwargs):
+
+    # This is a little confusing.
+    #
+    # player.describe()/playback() will create a Cassette instance.
+    #
+    # During the describe/playback operation _another_ Cassette instance
+    # will be created because the record-time Cassette data is saved in the
+    # input file. This second instance will be created in playback mode the
+    # same as every other Device. The recorded Cassette's tunes includes the
+    # record-time output filename but not an input filename. This is why we
+    # have a guard on self.input here.
+    if not self.input:
+      return
+
+    # Disable the record() method.
+    # We cannot record and playback at the same time!
+    self.record = self._record_in_playback_mode
+    self._write = None
+
+    with open(self.input, 'r') as f:
+      tracks = json.load(f)
+      self.track_manager = TrackManager.playback_instance(tracks, mode=self.mode)
+
+  def playback(self, *args, **kwargs):
+    return None
+
+  def _record_in_playback_mode(self, tune):
+    self.last_tune = tune
 
   def record(self, tune):
     '''
@@ -79,7 +103,7 @@ class Cassette(RecordingMedium, Device):
       Write everything to the output file.
     '''
 
-    current_track = self._track_manager.current
+    current_track = self.track_manager.current_track
 
     if tune.device:
       # Our current RecordingState may not be a state in which the Device can
@@ -88,8 +112,8 @@ class Cassette(RecordingMedium, Device):
       # header (configuration) state. There is no way to use that information
       # to configure the system on playback.
       if not tune.device.recordable(current_track.title):
-        raise Exception("[{}] is not in states [{}] of device [{}]".format(
-            current_track.title, tune.device.states, tune.device))
+        raise Exception("[{}] is not recordable on track [{}]".format(
+            tune.device, current_track.title))
 
     current_track.add(tune)
 
@@ -122,16 +146,8 @@ class Cassette(RecordingMedium, Device):
         f = getattr(obj, 'recordable_data', None)
         return f(obj) if f else json.JSONEncoder.default(self, obj)
 
-        # from .recorder import Recorder
-
-        # if isinstance(obj, Recorder):
-        #   raise Exception("Cannot record a Recorder instance."
-        #                   "Check your [{}] recording data.".format(device))
-
-        return json.JSONEncoder.default(self, obj)
-
     with open(self.output, 'w') as f:
       try:
-        json.dump(self._track_manager, f, cls=RecordingEncoder, **self._json_kwargs)
+        json.dump(self.track_manager, f, cls=RecordingEncoder, **self._json_kwargs)
       except TypeError as e:
-        raise Exception(self._track_manager) from e
+        raise Exception(self.track_manager) from e

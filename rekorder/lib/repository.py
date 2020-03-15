@@ -93,11 +93,10 @@ class RepositoryState(Device):
   '''Record the state of one or more repositories.
   '''
 
-  def __init__(self, *args, **kwargs):
-    super().__init__(*args, **kwargs)
-    # This is a little gross, we need to know about Cassette's valid states.
-    self.states.append('header')
-    self.states.append('trailer')
-
   def __call__(self, tunes):
     self.record(tunes=tunes, when=When.NA)
+
+  def recordable(self, track_title):
+    '''Is this device recordable for the named track?
+    '''
+    return track_title in ['recording', 'header', 'trailer']

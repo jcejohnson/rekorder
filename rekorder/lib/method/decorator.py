@@ -13,7 +13,7 @@ from ..when import When
 class Decorator(Device):
   '''Decorate a method so that we can record things about it.
 
-    Decorator objects are callable and can be used with our wihtout parameters.
+    Decorator objects are callable and can be used with or without parameters.
 
     Usage:
 
@@ -40,8 +40,9 @@ class Decorator(Device):
       afround : Delegates to before(). If when is When.AFTER, delegates to
                 after() and merges results.
 
-    Advanced derivatives may want to override intro(), outtro(), invoke() or
-    record(). See their definitions for more detail.
+    Advanced derivatives may want to override intro(), outtro(), invoke(),
+    record() or the pre/post hooks around invoke() and record().
+    See their definitions for more detail.
 
   '''
 
@@ -54,6 +55,7 @@ class Decorator(Device):
 
     obj.timestamp = kwargs['timestamp']
     obj.when = When.map(kwargs['when'])
+    # print("{}.when = [{}]".format(repr(obj), obj.when))
 
     # A Decorator's purpose is to record data about a function so, let's go
     # find the function we recorded.
@@ -68,7 +70,7 @@ class Decorator(Device):
     # them it makes _more_ sense to put them here.
 
     if 'args' in function:
-      obj.args = function['args']
+      obj.args = tuple(function['args'])  # list -> tuple
     if 'kwargs' in function:
       obj.kwargs = function['kwargs']
     if 'rval' in function:
@@ -86,6 +88,15 @@ class Decorator(Device):
 
     super().__init__(*args, when=when, **kwargs)
 
+  def _describe_function(self):
+    if isinstance(self.function, dict):
+      m = self.function['module']
+      n = self.function['name']
+    else:
+      m = self.function.__module__
+      n = self.function.__name__
+    return m, n
+
   def intro(self, **moar):
     '''This is called immediately upon entering the function wrapper.
         Its output is not recorded.
@@ -97,7 +108,7 @@ class Decorator(Device):
 
         Method parameters are available as self.args and self.kwargs.
 
-        Returns the tune to be recorded.
+        Returns a dict representing the Notes of the Tune to be recorded.
 
         Default behavior:
           Provides function module and name, args & kwargs
@@ -125,7 +136,7 @@ class Decorator(Device):
         Method result is available as self.result after metthod invocation
         (it is undefined before method invocation).
 
-        Returns the tune to be recorded.
+        Returns a dict representing the Notes of the Tune to be recorded.
 
         Default behavior:
           Delegates to before() or after() based on value of `when`.
@@ -142,7 +153,7 @@ class Decorator(Device):
         Method parameters are available as self.args and self.kwargs.
         Method result is available as self.result.
 
-        Returns the tune to be recorded.
+        Returns a dict representing the Notes of the Tune to be recorded.
 
         Default behavior:
           Provides function module and name, args, kwargs & result.
@@ -159,6 +170,8 @@ class Decorator(Device):
     }
 
   def _get_module_of(self, function):
+    '''Get the module that owns the function we are recording.
+    '''
 
     if self.function.__module__ == '__main__':
       return sys.modules[self.function.__module__].__file__.replace('/', '.').replace('.py', '')
@@ -186,36 +199,13 @@ class Decorator(Device):
   def post_invoke(self, rval):
     return rval
 
-  def pre_record(self, tune):
-    pass
-
-  def record(self, tune):
-    '''Delegate to our Recorder.
-
-      The Recorder acts as an intermediary between ourself and the recording
-      medium (i.e. - the Cassette). This is consistent with the Real World and
-      also gives the Recorder an opportunity to modify the data (tunes) we
-      provide before committing them to tape if it wants.
-    '''
-    if not tune:
-      return
-    self.pre_record(tune=tune)
-    self.recorder.record(tune=tune)
-    self.post_record(tune=tune)
-
-  def post_record(self, tune):
-    pass
-
   def silence(self, *args, **kwargs):
     '''Utility method for derivatives that want to record silence for one or
-        more of before(), around() or after() instead of the default tune.
+        more of before(), around() or after() instead of the default notes.
     '''
     return {}
 
   def __call__(self, function=None, *, when=When.NA, **moar):
-
-    if 'func' in moar:
-      raise Exception("oops")
 
     def wrapper(f):
 
@@ -223,39 +213,17 @@ class Decorator(Device):
 
       def wrapper_inner(*args, **kwargs):
 
-        # if not hasattr(self.function, '_is_a_Method_decorator'):
-        #   print("Begin new track for [{}]".format(self.function))
+        self.args, self.kwargs = args, kwargs
 
         self.intro(**moar)
 
-        self.args = args
-        self.kwargs = kwargs
-
-        if when == When.BEFORE:
-          tune = Tune(device=self, notes=self.before(**moar), when=When.BEFORE)
-        elif when == When.AROUND:
-          tune = Tune(device=self, notes=self.around(when=When.BEFORE, **moar), when=When.BEFORE)
-        else:
-          tune = None
-
-        self.record(tune=tune)
+        self._baa(when, When.BEFORE, self.before, **moar)
 
         self.rval = self.invoke()
-        # Note that self.result will be undefined if self.invoke() throws an exception.
 
-        if when == When.AFTER:
-          tune = Tune(device=self, notes=self.after(**moar), when=When.BEFORE)
-        elif when == When.AROUND:
-          tune = Tune(device=self, notes=self.around(when=When.AFTER, **moar), when=When.AFTER)
-        else:
-          tune = None
-
-        self.record(tune=tune)
+        self._baa(when, When.AFTER, self.after, **moar)
 
         self.outtro(**moar)
-
-        # if not hasattr(self.function, '_is_a_Method_decorator'):
-        #   print("End track for [{}]".format(self.function))
 
         return self.rval
 
@@ -265,6 +233,19 @@ class Decorator(Device):
       return wrapper(function)
 
     return wrapper
+
+  def _baa(self, when, target, function, **moar):
+    # Before/Around/After
+
+    if when == target:
+      notes = function(**moar)
+    elif when == When.AROUND:
+      notes = self.around(when=target, **moar)
+    else:
+      return
+
+    # record (and possibly validate) the notes from the device.
+    self.record(notes=notes, when=when)
 
   # Device
 

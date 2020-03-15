@@ -18,17 +18,16 @@ def describe(obj, *args, **kwargs):
 
   click.echo("Describe [{input}]".format(**kwargs))
 
-  player = Player(output='/dev/null',  mode=What.DESCRIBE, **kwargs)
+  player = Player(output='/dev/null', mode=What.DESCRIBE, **kwargs)
   player.describe()
 
 
 @main.command()
 @click.option(u'--input', required=True)
-@click.option(u'--output', required=True)
 @click.pass_obj
 def playback(obj, *args, **kwargs):
 
-  click.echo("Replay [{input}] into [{output}]".format(**kwargs))
+  click.echo("Playback [{input}]".format(**kwargs))
 
-  player = Player(**kwargs)
+  player = Player(output='/dev/null', mode=What.PLAYBACK, **kwargs)
   player.playback()

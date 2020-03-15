@@ -24,8 +24,20 @@ class Track:
     self.index = index
     self.title = title
     self.tunes = [
-        Tune.playback_instance(t, self.mode) for t in tunes
+        Tune.playback_instance(t, mode=self.mode) for t in tunes
     ] if tunes else []
+    self.reset()
 
   def add(self, tune):
     self.tunes.append(tune)
+
+  def reset(self):
+    self._iter = iter(self.tunes)
+    self.current_tune = None
+
+  def size(self):
+    return len(self.tunes)
+
+  def next_tune(self):
+    self.current_tune = next(self._iter)
+    return self.current_tune

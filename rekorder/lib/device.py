@@ -3,6 +3,7 @@ import logging
 
 from .tune import Tune
 from .what import What
+from .when import When
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +40,9 @@ class Device:
     # A tune to record, playback or describe (if provided)
     self.tune = kwargs.get('tune', None)
 
+    # Most devices will wrap function calls so we treat 'when' as a core attribute.
+    self.when = kwargs.get('when', When.NA)
+
     # Figure out which function describe_device() should delegate to in order
     # to describe this device.
     # Devices _may_ override describe_device() if they want but it is better
@@ -46,7 +50,13 @@ class Device:
     if self.mode == What.RECORD:
       self._describe_device = self.describe_recordable_device
       self._init_recordable(*args, **kwargs)
-    elif self.mode in [What.PLAYBACK, What.DESCRIBE]:
+    elif self.mode == What.VALIDATE:
+      self._describe_device = self.describe_recordable_device
+      self._init_for_validate(*args, **kwargs)
+    elif self.mode == What.DESCRIBE:
+      self._describe_device = self.describe_playable_device
+      self._init_describable(*args, **kwargs)
+    elif self.mode == What.PLAYBACK:
       self._describe_device = self.describe_playable_device
       self._init_playable(*args, **kwargs)
 
@@ -55,9 +65,20 @@ class Device:
   def __str__(self):
     return self.describe_device()
 
+  def __eq__(self, other):
+    raise Exception("Derived class [{}] missing __eq__()".format(
+        self.__class__.__name__))
+
   def _init_recordable(self, *args, **kwargs):
     if not self.recorder:
       raise Exception("Recorder required in mode [{}].".format(self.mode))
+
+  def _init_for_validate(self, *args, **kwargs):
+    self._init_recordable(*args, **kwargs)
+    self.__record__, self.record = self.record, self.__validate__
+
+  def _init_describable(self, *args, **kwargs):
+    pass
 
   def _init_playable(self, *args, **kwargs):
     pass
@@ -75,21 +96,45 @@ class Device:
     raise Exception("Derived class [{}] missing describe_playable_device()".format(
         self.__class__.__name__))
 
-  def record(self, tunes, when):
+  def record(self, notes, when):
     '''Delegate to our Recorder.
 
       The Recorder acts as an intermediary between recordable Devices and
       the recording medium (i.e. - the Cassette). This is consistent with the
       Real World and also gives the Recorder an opportunity to modify the data
-      (tunes) from the Device before committing them to tape if it wants.
+      (notes) from the Device before committing them to tape if it wants.
+
+      A derived class may choose to override this method and internally provide
+      the notes. For instance:
+
+        class MyDevice(Device):
+          def record(self, message):
+            super().record(notes={'message': 'Hello World'})
+
+        MyDevice(recorder=Recorder.get_recorder(...)).record()
 
       Args:
-        tunes (dict): Stuff to record.
+        notes (dict): Stuff to record.
         when (When): When stuff is recorded.
     '''
-    print('FIXME TOO')
-    tune = Tune(device=self, notes=tunes, when=when)
+    tune = Tune(device=self, notes=notes, when=when)
     self.recorder.record(tune=tune)
+
+  def validate(self, notes, when):
+    '''Validate playback activity against recorded state.
+    '''
+    print("{}.validate(...)".format(self.__class__.__name__))
+
+    # Fetch the data from the recording_medium
+    expectation = self.recorder.recording_medium.track_manager.current_track.next_tune()
+
+    # Compare tune to what was fetched
+    last_tune = self.recorder.recording_medium.last_tune
+    if last_tune.device != expectation.device:
+      # print(str(expectation.device))
+      # print(str(last_tune.device))
+      raise Exception("Device expectation failed: expectation [{}] actual [{}]".format(
+          expectation.device, last_tune.device))
 
   def recordable(self, track_title):
     '''Is this device recordable for the named track?
@@ -97,3 +142,11 @@ class Device:
         our default.
     '''
     return track_title == 'recording'
+
+  def __validate__(self, *args, notes, when, **kwargs):
+    '''Replaces record() in VALIDATE mode.
+        Delegates to the original record() method then to validate().
+        The idea is to transparently invoke validate() after record().
+    '''
+    self.__record__(*args, notes=notes, when=when, **kwargs)
+    self.validate(*args, notes=notes, when=when, **kwargs)

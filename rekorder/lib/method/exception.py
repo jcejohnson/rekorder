@@ -17,7 +17,7 @@ class MethodException(Device):
   def __init__(self, *args, **kwargs):
     super().__init__(*args, **kwargs)
 
-  def _init_playable(self, *args, **kwargs):
+  def _init_describable(self, *args, **kwargs):
     self.original = kwargs['original']
     self.traceback = kwargs['traceback']
 
@@ -50,7 +50,7 @@ class MethodException(Device):
       except Exception as original:
         self.record(
             when=When.EXCEPTION,
-            tunes={
+            notes={
                 'original': original.__class__.__name__,
                 'traceback': traceback.format_tb(original.__traceback__)
             }

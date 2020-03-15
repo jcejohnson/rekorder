@@ -19,12 +19,34 @@ class MethodReturn(Decorator):
         def some_func(...):
   '''
 
+  def __eq__(self, other):
+    '''Compare the attributes common between describe_playable_device() and describe_recordable_device()
+    '''
+    if self.__class__ != other.__class__:
+      return False
+    if self.when != other.when:
+      if When.AROUND not in [self.when, other.when]:
+        return False
+    if self._describe_function() != other._describe_function():
+      return False
+    if self.rval != other.rval:
+      return False
+    return True
+
   def describe_playable_device(self):
     return "{} {}.{}(...) -> [{}]".format(
         self.__class__.__name__,
         self.function['module'],
         self.function['name'],
         self.function['rval']
+    )
+
+  def describe_recordable_device(self):
+    return "{} {}.{}(...) -> [{}]".format(
+        self.__class__.__name__,
+        self.function.__module__,
+        self.function.__name__,
+        self.rval
     )
 
   def before(self):

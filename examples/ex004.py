@@ -14,6 +14,7 @@ def main(recorder):
 
   @recorder.method.params(when=When.AROUND)
   # @recorder.method.repository_state(paths=[sys.argv[1]], when=When.AROUND)  # Not yet implemented
+  @recorder.method.repository
   @recorder.method.rval
   @recorder.method.exception
   def foo(*args, **kwargs):
@@ -34,7 +35,10 @@ def main(recorder):
   # @recorder.method.mockme  # Replace with a mock object in playback
   def baz(a, b, c=99):
     print("baz!!!")
-    foo(c)
+    if isinstance(c, list):
+      foo(c.pop())
+    else:
+      foo(c)
     return a / b
 
   print(__name__)
@@ -43,7 +47,7 @@ def main(recorder):
 
   print("baz method is [{}]".format(baz))
   baz(25, 5, 9)
-  baz(25, b=5, c=9)
+  baz(25, b=5, c=[33, 66, 99])
   baz(b=5, a=15)
 
   if len(sys.argv) > 1:

@@ -2,7 +2,6 @@
 import sys
 import traceback
 
-from .cassette import Cassette
 from .when import When
 
 

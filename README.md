@@ -10,12 +10,14 @@ Additional documentation forthcoming
     bumpversion ...
     git push origin  # bitbucket
     git checkout release
-    git merge master --squash
+    git merge -X theirs --squash master
     git commit -m v$(cat version.txt)
     git push public release:master  # github
     git tag v$(cat version.txt)
     git push public v$(cat version.txt)
-    
+    git checkout master
+    git push origin v$(cat version.txt)
+
 ## File Format
 
 The output file is a Cassette(RecordingMedium).
@@ -28,7 +30,6 @@ Cassette - greatest-hits.json
     [
       a list of Tracks
     ]
-
 
 Track
 
@@ -55,5 +56,3 @@ Tune
         "time": time.time()
       }
     }
-
-

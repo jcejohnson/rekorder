@@ -5,7 +5,7 @@ setup(
     description='Record and playback simple python CLI apps.',
     author='James Johnson',
     url='https://bitbucket.org/jcejohnson/rekorder/src/master/',
-    version='0.1.1',
+    version='0.2.0',
     packages=['rekorder'],
     license='Dont Be a Dick',
     long_description=open('README.md').read(),

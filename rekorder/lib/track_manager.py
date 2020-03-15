@@ -26,26 +26,42 @@ class TrackManager:
           for track in kwargs['tracks']
       ]
 
-    self._index = 0
+    else:
+      raise Exception("Unsupported mode [{}]".format(self.mode))
+
+    self.reset()
 
   @staticmethod
   def recordable_data(obj):
     return obj._tracks
 
-  @property
-  def current(self):
-    return self._tracks[self._index]
+  def __iter__(self):
+    self._index = 0
+    return self
+
+  def __next__(self):
+    was = self.current_track.title if self.current_track else ''
+    if self._index < self._max:
+      self.current_track = self._tracks[self._index]
+      self._index += 1
+      return self.current_track
+    else:
+      raise StopIteration
+
+  def set_track(self, new_track):
+    while self.current_track and self.current_track.title != new_track:
+      next(self)
 
   @property
   def tracks(self):
-    return self._tracks
+    return self
 
   @property
   def next(self):
-    self._index += 1
-    if self._index > len(self._tracks):
-      raise Exception("Attempt to access non-existent track.")
+    return self.__next__()
 
   def reset(self):
+    self.current_track = None
     self._index = 0
-    return self.current()
+    self._max = len(self._tracks)
+    return self.next

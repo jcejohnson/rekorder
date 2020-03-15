@@ -1,5 +1,15 @@
 # rekorder changelog
 
+0.2.0
+-----
+- Initial playback implementation.
+- Initial validate-on-playback impelementation (only tested on ex001.py thus far).
+- Bugfix: If mutable parameters change during function invocation MethodParameters recorded the new/changed value for both before and after.
+- Capture some thoughts on custom devices.
+- Make decorator's wrapper_inner function more DRY.
+- Move lib.recorder.py to lib.recorder
+- Remove a bunch of dumb delegation methods
+
 0.1.1
 -----
 - Document recordings file format.
@@ -13,7 +23,6 @@
 - In Decorator, add pre/post methods for invoke and record to give derived classes more control.
 - Replace Device.states list with Device.recordable(track) method.
 - Added .bumpversion.cfg
-
 
 0.1.0
 -----

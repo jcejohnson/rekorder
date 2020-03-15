@@ -25,14 +25,14 @@ class MethodRepository(Decorator):
         def some_func(...):
   '''
 
-  def before(self, paths, **ignored):
-    return self.around(when=When.NA, paths=paths)
+  def before(self, **moar):
+    return self.around(when=When.NA, paths=moar['paths'])
 
-  def after(self, paths, **ignored):
-    return self.around(when=When.NA, paths=paths)
+  def after(self, **moar):
+    return self.around(when=When.NA, paths=moar['paths'])
 
-  def around(self, when, paths, **ignored):
-    states = self.recorder.repository_state.get_states(paths=paths)
+  def around(self, when, **moar):
+    states = self.recorder.repository_state.get_states(paths=moar['paths'])
     return {
         'repositories': states,
         'function': {

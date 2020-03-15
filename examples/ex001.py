@@ -3,14 +3,15 @@
 
 import os
 import sys
-from rekorder import Recorder, When
+from rekorder import Recorder, When, What
 
 # Get a named Recorder instance.
 recorder = Recorder.get_recorder(
     name=os.path.basename(__file__).replace('.py', ''),
     output=os.path.basename(__file__).replace('.py', '.json'))
 
-print("Application recorder is [{}]".format(recorder))
+if recorder.mode == What.RECORD:
+  print("Application recorder is [{}]".format(recorder))
 
 
 @recorder.begin  # Start recording when main() is called.
@@ -18,7 +19,9 @@ print("Application recorder is [{}]".format(recorder))
 @recorder.end    # End the recording when main() returns.
 #                # This also captures the method's result.
 def main():
+  print("Begin [{}]".format(__name__))
   foo(1, 2, 3, foo='bar', bar='baz')
+  print("End [{}]".format(__name__))
 
 
 @recorder.method.params         # Capture foo's parameters before invocation.

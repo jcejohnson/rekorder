@@ -24,13 +24,29 @@ class MethodParameters(Decorator):
         def some_func(...):
   '''
 
-  # Device
+  def __eq__(self, other):
+    '''Compare the attributes common between describe_playable_device() and describe_recordable_device()
+    '''
+    if self.__class__ != other.__class__:
+      return False
+    if self.when != other.when:
+      if When.AROUND not in [self.when, other.when]:
+        return False
+    if self._describe_function() != other._describe_function():
+      return False
+    if self.args != other.args:
+      return False
+    if self.kwargs != other.kwargs:
+      return False
+    return True
+
+# Device
 
   def describe_playable_device(self):
+    m, n = self._describe_function()
+
     r = "{} {}.{}({})".format(
-        self.__class__.__name__,
-        self.function['module'],
-        self.function['name'],
+        self.__class__.__name__, m, n,
         ', '.join(
             itertools.chain(
                 [str(i) for i in self.args],
@@ -43,7 +59,7 @@ class MethodParameters(Decorator):
     return r
 
   def describe_recordable_device(self):
-    return "{} {}.{}({})".format(
+    r = "{} {}.{}({})".format(
         self.__class__.__name__,
         self.function.__module__,
         self.function.__name__,
@@ -54,6 +70,7 @@ class MethodParameters(Decorator):
             )
         )
     )
+    return r
 
   def _quote(self, key, value):
     if not isinstance(value, str):

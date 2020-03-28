@@ -37,26 +37,8 @@ def foo(rec, *args, **kwargs):
 
 if __name__ == "__main__":
 
-  # The replayable recording doesn't start until the @recorder.begin
-  # function is invoked. Any recorded information prior to that will
-  # be used as playback configuration.
-
-  if len(sys.argv) > 1:
-    # Capture the state of one or more repositories in the recording's
-    # header (configuration) section.
-    # On playback the repositories will be cloned and checked out at
-    # the recorded commit.
-    recorder.repository_state.record(paths=sys.argv[1:])
+  # Note that we cannot do any recorder actions here if we are going to do
+  # playback verification because this will not be executed during playback.
+  # (because __name__ won't be "__main__")
 
   main()
-
-  # The recordable recording stops when the @recorder.end function
-  # is invoked. Anything recorded after that will be used to restore
-  # the workspace during playback.
-
-  if len(sys.argv) > 1:
-    # Capture the state of those same repositories in the recording's
-    # trailter (restore) section.
-    # On playback the repositories will be checked out at the recorded
-    # commit. (i.e. - restored to their pre-execution state)
-    recorder.repository_state.record(paths=sys.argv[1:])

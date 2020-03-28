@@ -55,7 +55,6 @@ class Decorator(Device):
 
     obj.timestamp = kwargs['timestamp']
     obj.when = When.map(kwargs['when'])
-    # print("{}.when = [{}]".format(repr(obj), obj.when))
 
     # A Decorator's purpose is to record data about a function so, let's go
     # find the function we recorded.

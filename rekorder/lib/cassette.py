@@ -90,8 +90,8 @@ class Cassette(RecordingMedium, Device):
       tracks = json.load(f)
       self.track_manager = TrackManager.playback_instance(tracks, mode=self.mode)
 
-  def playback(self, *args, **kwargs):
-    return None
+  def playback(self, *args, rval, **kwargs):
+    return rval
 
   def _record_in_playback_mode(self, tune):
     self.last_tune = tune

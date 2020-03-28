@@ -1,5 +1,6 @@
 
 from ..device import Device
+from ..when import When
 
 
 class RecordingDevice(Device):
@@ -11,12 +12,15 @@ class RecordingDevice(Device):
     from . import Recorder
     return RecordingDevice(recorder=Recorder.get_recorder(*args, **kwargs))
 
-  def playback(self, *args, **kwargs):
-    return self.recorder.playback(*args, **kwargs)
-
   def describe_device(self):
     return "{} name=[{}] mode=[{}]".format(
         self.recorder.__class__.__name__, self.recorder.name, self.mode)
+
+  def playback(self, *args, **kwargs):
+    return self.recorder.playback(*args, **kwargs)
+
+  def record(self):
+    super().record(notes={'name': self.recorder.name}, when=When.NA)
 
   def recordable(self, track_title):
     '''A Recorder can only record its information to the header track.

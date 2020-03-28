@@ -8,6 +8,26 @@ from .when import When
 logger = logging.getLogger(__name__)
 
 
+class DeviceProxy:
+  '''A marker interface to indicate that an object can be used in place
+      of a Device.
+
+      RecordableDeviceManager classes will generally contain one or more
+      Device instances.
+      In some cases (e.g. - repository.RepositoryState) it is desirable for
+      the device's playback_instance() method to return an instance of the
+      RecordableDeviceManager instead of the Device. When this is done,
+      the RecordableDeviceManager must derive from DeviceProxy so that the
+      system (e.g. - Tune) will treat it as a Device.
+
+      Deriving RecordableDeviceManager classes from DeviceProxy is preferred
+      to deriving them from Device because it allows for a better separation
+      of concerns by separating the Device details in a second / helper class
+      rather than overloading the RecordableDeviceManager itself.
+  '''
+  pass
+
+
 class Device:
   '''A thing that can be recorded, played back or described.
   '''
@@ -19,7 +39,7 @@ class Device:
   def __init__(self, *args, **kwargs):
 
     if not kwargs.get('mode', None) and not kwargs.get('recorder', None):
-      raise Exception("Programmer error")
+      raise Exception("Programmer error. kwargs missing both node and recorder.")
 
     # Set the mode (if provided)
     self.mode = kwargs.get('mode', None)
@@ -36,9 +56,6 @@ class Device:
         raise Exception("Mismatch between our mode [{}]"
                         "and our recorder's mode [{}]".format(
                             self.mode, self.record.mode))
-
-    # A tune to record, playback or describe (if provided)
-    self.tune = kwargs.get('tune', None)
 
     # Most devices will wrap function calls so we treat 'when' as a core attribute.
     self.when = kwargs.get('when', When.NA)
@@ -123,18 +140,21 @@ class Device:
   def validate(self, notes, when):
     '''Validate playback activity against recorded state.
     '''
-    print("{}.validate(...)".format(self.__class__.__name__))
 
-    # Fetch the data from the recording_medium
+    # Fetch the data from the recording_medium by reading the next tune.
     expectation = self.recorder.recording_medium.track_manager.current_track.next_tune()
 
-    # Compare tune to what was fetched
-    last_tune = self.recorder.recording_medium.last_tune
-    if last_tune.device != expectation.device:
-      # print(str(expectation.device))
-      # print(str(last_tune.device))
-      raise Exception("Device expectation failed: expectation [{}] actual [{}]".format(
-          expectation.device, last_tune.device))
+    # Compare tune to what was just recorded.
+    actual = self.recorder.recording_medium.last_tune
+
+    from .method.repository import MethodRepository
+
+    if actual.device != expectation.device:
+      self.validation_failure(actual, expectation)
+
+  def validation_failure(self, actual, expectation):
+    raise Exception("Device expectation failed: expectation [{}] actual [{}]".format(
+        expectation.device, actual.device))
 
   def recordable(self, track_title):
     '''Is this device recordable for the named track?

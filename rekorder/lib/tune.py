@@ -80,8 +80,13 @@ class Tune:
     self.notes = copy.deepcopy(notes)
 
     from .device import Device
-    if self.device and not isinstance(self.device, Device):
-      raise Exception("[{}] is must be a Device".format(self.device))
+    from .device import DeviceProxy
+    if self.device and (isinstance(self.device, Device) or isinstance(self.device, DeviceProxy)):
+      return
+
+    raise Exception(
+        "[{}] must be a Device or provide a get_device() method that returns a Device".format(
+            self.device))
 
   def playback(self, *args, **kwargs):
     return self.device.playback(*args, **kwargs)

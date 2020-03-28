@@ -14,7 +14,7 @@ def main(recorder):
 
   @recorder.method.params(when=When.AROUND)
   # @recorder.method.repository_state(paths=[sys.argv[1]], when=When.AROUND)  # Not yet implemented
-  @recorder.method.repository
+  # @recorder.method.repository
   @recorder.method.rval
   @recorder.method.exception
   def foo(*args, **kwargs):
@@ -26,7 +26,7 @@ def main(recorder):
   @recorder.method.rval
   @recorder.method.exception
   def bar():
-    0 / 0
+    0 / 10
 
   # @recorder.method.everything(when=When.AFTER)
   @recorder.method.params(when=When.AROUND)
@@ -62,7 +62,11 @@ def main(recorder):
 
 if __name__ == "__main__":
 
-  recorder = Recorder(name="MyRekorder", output=os.path.basename(sys.argv[0]).replace('.py', '.json'))
+  print("sys.argv : " + str(sys.argv))
+
+  recorder = Recorder.get_recorder(
+      name=os.path.basename(__file__).replace('.py', ''),
+      output=os.path.basename(__file__).replace('.py', '.json'))
 
   @recorder.begin
   @recorder.end
@@ -73,3 +77,22 @@ if __name__ == "__main__":
     main(recorder)
 
   main_wrapper()
+
+else:  # If we _don't_ want to do playback verification, we _don't_ need this.
+
+  print("sys.argv : " + str(sys.argv))
+
+  # Much like ex002, when we do things within `if __name__ == "__main__"`,
+  # we have to account for them during playback.
+
+  recorder = Recorder.get_recorder(
+      name=os.path.basename(__file__).replace('.py', ''),
+      output=os.path.basename(__file__).replace('.py', '.json'))
+
+  @recorder.begin
+  @recorder.end
+  @recorder.method.params(when=When.AROUND)
+  @recorder.method.rval
+  @recorder.method.exception
+  def main_wrapper():
+    main(recorder)

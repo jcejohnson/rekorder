@@ -1,13 +1,15 @@
 
 import copy
+import sys
 
+from .cli_state import CliState
 from .device import RecordingDevice
 from .manager import RecordingManager
 
 from ..cassette import Cassette
 from ..manager import RecordableDeviceManager
 from ..method import Method
-from ..repository import Repository
+from ..repository import RepositoryManager
 from ..tune import Tune
 from ..what import What
 from ..when import When
@@ -27,7 +29,7 @@ class Recorder(RecordableDeviceManager):
 
     By giving each Recordable device a reference to the Recorder, it gives
     them the opportunity to interact through the recorder (e.g. - so that
-    MethodRepository can leverage Repository.get_states())
+    MethodRepository can leverage RepositoryManager.get_states())
 
     Usage:
 
@@ -99,12 +101,15 @@ class Recorder(RecordableDeviceManager):
       # When recording our data, use a RecordingDevice so that Recorder does
       # not need to be a Device. Things get too complicated if Recorder is
       # trying to play too many roles.
-      self.record(
-          tune=Tune(
-              device=RecordingDevice(recorder=self),
-              notes={'name': self.name}
-          )
-      )
+      RecordingDevice(recorder=self).record()
+      # self.record(
+      #     tune=Tune(
+      #         device=RecordingDevice(recorder=self),
+      #         notes={'name': self.name}
+      #     )
+      # )
+
+      CliState(recorder=self).record()
 
     elif self.mode == What.DESCRIBE:
       pass
@@ -125,11 +130,11 @@ class Recorder(RecordableDeviceManager):
     # Add ourselves to the dict of named recorders
     Recorder.__save_recorder(self)
 
-  def playback(self, *args, **kwargs):
+  def playback(self, *args, rval, **kwargs):
     # This is awkward.
     # playback() may be called to playback this Recorder or
     # may be called by another Device to get its playback data.
-    return None
+    return rval
 
   def record(self, tune):
     '''Record a tune on a recording_medium for later playback.
@@ -175,8 +180,8 @@ class Recorder(RecordableDeviceManager):
     return Method(recorder=self)
 
   @property
-  def repository_state(self):
+  def repository_manager(self):
     '''This property's state() decorator will let you record the state of one
         or more repositories before and/or after method invocation.
     '''
-    return Repository(recorder=self)
+    return RepositoryManager(recorder=self)

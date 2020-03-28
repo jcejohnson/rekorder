@@ -14,20 +14,36 @@ class MethodException(Device):
     __call__() method which is kind of the whole point of Decorator.
   '''
 
-  def __init__(self, *args, **kwargs):
-    super().__init__(*args, **kwargs)
+  @staticmethod
+  def playback_instance(cls, *args, **kwargs):
+    obj = Device.playback_instance(cls, *args, **kwargs)
+    obj.cls = kwargs['class']
+    obj.message = kwargs['message']
+    obj.traceback = kwargs['traceback']
+    return obj
 
-  def _init_describable(self, *args, **kwargs):
-    self.original = kwargs['original']
+  def _init_playable(self, *args, **kwargs):
+    '''kwargs is our recorded tune's notes.
+        See exception_wrapper()
+    '''
+    self.cls = kwargs['class']
+    self.message = kwargs['message']
     self.traceback = kwargs['traceback']
 
-  def describe_playable_device(self):
-    r = "{} [{}] [{}]".format(
+  def describe_device(self):
+    r = "{} [{}] [{}] [{}]".format(
         self.__class__.__name__,
-        self.original,
+        self.cls,
+        self.message,
         self.traceback[-1].replace('\n', '<nl>')
     )
     return r
+
+  def describe_playable_device(self):
+    return self.describe_device()
+
+  def describe_recordable_device(self):
+    return self.describe_device()
 
   def __call__(self, function):
     '''A decorator that will record exceptions.
@@ -48,13 +64,20 @@ class MethodException(Device):
       try:
         return function(*args, **kwargs)
       except Exception as original:
+        self.cls = original.__class__.__name__
+        self.message = str(original)
+        self.traceback = traceback.format_tb(original.__traceback__)
         self.record(
             when=When.EXCEPTION,
             notes={
-                'original': original.__class__.__name__,
-                'traceback': traceback.format_tb(original.__traceback__)
+                'class': self.cls,
+                'message': self.message,
+                'traceback': self.traceback
             }
         )
         raise
 
     return Decorator.wrap_if_necessary(self, self.function, exception_wrapper)
+
+  def __eq__(self, other):
+    return type(self) == type(other) and self.cls == other.cls and self.message == other.message

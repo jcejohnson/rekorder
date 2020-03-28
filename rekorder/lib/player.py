@@ -67,6 +67,7 @@ class Player:
       rval = tune.playback(rval=rval)
 
     track = self._recording_medium.track_manager.next
+    assert track.title == 'entry'
 
     return rval
 
@@ -85,7 +86,17 @@ class Player:
 
     tune = track.next_tune()
     print("  {}".format(tune.device))
+
+    # entry playback will launch the application and move to the 'recording'
+    # track. As the application executes, it will consume the recorded tunes
+    # and validate the execution against the recording. This includes moving
+    # to the 'exit' track and validating the application's exit which then
+    # puts us on the 'trailer' track.
+
     rval = tune.playback(rval=rval)
+
+    track = self._recording_medium.track_manager.tracks.current_track
+    assert track.title == 'trailer'
 
     return rval
 
@@ -99,6 +110,9 @@ class Player:
     for tune in track.tunes:
       print("  {}".format(tune.device))
       rval = tune.playback(rval=rval)
+
+    track = self._recording_medium.track_manager.tracks.current_track
+    assert track.title == 'trailer'
 
     return rval
 

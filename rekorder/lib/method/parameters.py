@@ -27,6 +27,8 @@ class MethodParameters(Decorator):
   def __eq__(self, other):
     '''Compare the attributes common between describe_playable_device() and describe_recordable_device()
     '''
+    if type(self) != type(other):
+      return False
     if self.__class__ != other.__class__:
       return False
     if self.when != other.when:

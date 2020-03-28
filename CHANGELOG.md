@@ -1,14 +1,28 @@
 # rekorder changelog
 
-0.2.0
+0.3.0
+-----
+- Added DeviceProxy marker interface for classes that want to proxy (wrap) Device instances.
+- Added CliState recorder to record & restore sys.argv so that target app sees original sys.argv rather than playback's sys.argv.
+- Initial implementation of header & trailer tracks repository playback (does not clone/checkout).
+- Validate-on-playback of recording track working for ex001 - ex004 (all functions).
+- Shifted repository state mechanics from RepositoryManager to RepositoryState(Device).
+- Moved validation failure exception in Device.validate() to validation_failure() function so that derived classes can override it.
+*Breaking Changes*
+- @rekorder.method.repository_state decorator is now @rekorder.method.repository
+- Recorder.repository_state is now Recorder.repository_manager
+- repository.Repository class is now repository.RepositoryManager
+
+0.3.0
 -----
 - Initial playback implementation.
-- Initial validate-on-playback impelementation (only tested on ex001.py thus far).
+- Initial validate-on-playback implementation (only tested on ex001.py in this version).
 - Bugfix: If mutable parameters change during function invocation MethodParameters recorded the new/changed value for both before and after.
 - Capture some thoughts on custom devices.
 - Make decorator's wrapper_inner function more DRY.
+*Breaking Changes*
 - Move lib.recorder.py to lib.recorder
-- Remove a bunch of dumb delegation methods
+- Remove a bunch of dumb delegation methods.
 
 0.1.1
 -----

@@ -7,7 +7,7 @@ from .device import RecordingDevice
 from .manager import RecordingManager
 
 from ..cassette import Cassette
-from ..manager import RecordableDeviceManager
+from ..device import DeviceManager
 from ..method import Method
 from ..repository import RepositoryManager
 from ..tune import Tune
@@ -15,7 +15,7 @@ from ..what import What
 from ..when import When
 
 
-class Recorder(RecordableDeviceManager):
+class Recorder(DeviceManager):
   '''A Recorder is the central object.
 
     It gives us the means of recording and replaying simple CLI apps.
@@ -130,12 +130,6 @@ class Recorder(RecordableDeviceManager):
     # Add ourselves to the dict of named recorders
     Recorder.__save_recorder(self)
 
-  def playback(self, *args, rval, **kwargs):
-    # This is awkward.
-    # playback() may be called to playback this Recorder or
-    # may be called by another Device to get its playback data.
-    return rval
-
   def record(self, tune):
     '''Record a tune on a recording_medium for later playback.
 
@@ -166,16 +160,24 @@ class Recorder(RecordableDeviceManager):
 
   @property
   def begin(self):
+    '''
+        A new RecordingBegin is created on each call to begin.
+    '''
     return self.recording_manager.begin
 
   @property
   def end(self):
+    '''
+        A new RecordingEnd is created on each call to end.
+    '''
     return self.recording_manager.end
 
   @property
   def method(self):
     '''This property has decorators to record method parameters, return values
         and exceptions.
+
+        A new Method is created on each call to repository_manager.
     '''
     return Method(recorder=self)
 
@@ -183,5 +185,7 @@ class Recorder(RecordableDeviceManager):
   def repository_manager(self):
     '''This property's state() decorator will let you record the state of one
         or more repositories before and/or after method invocation.
+
+        A new RepositoryManager is created on each call to repository_manager.
     '''
     return RepositoryManager(recorder=self)

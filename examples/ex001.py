@@ -1,3 +1,5 @@
+#!venv/bin/python
+
 '''Illustrates basic rekorder usage.
 '''
 

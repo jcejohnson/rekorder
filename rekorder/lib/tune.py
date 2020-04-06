@@ -8,8 +8,7 @@ from .when import When
 
 
 class Tune:
-  '''Tune captures Device details, the Notes created by the Device and
-      a timestamp.
+  '''Tune captures Device details, the Notes created by the Device and a timestamp.
   '''
 
   @staticmethod

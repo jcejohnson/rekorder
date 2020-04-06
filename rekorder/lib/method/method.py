@@ -1,5 +1,5 @@
 
-from ..manager import RecordableDeviceManager
+from ..device import DeviceManager
 from ..what import What
 from ..when import When
 
@@ -10,7 +10,7 @@ from .repository import MethodRepository
 from .rval import MethodReturn
 
 
-class Method(RecordableDeviceManager):
+class Method(DeviceManager):
   '''Record interesting things about methods.
 
     Usage:

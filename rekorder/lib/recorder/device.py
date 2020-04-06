@@ -16,8 +16,8 @@ class RecordingDevice(Device):
     return "{} name=[{}] mode=[{}]".format(
         self.recorder.__class__.__name__, self.recorder.name, self.mode)
 
-  def playback(self, *args, **kwargs):
-    return self.recorder.playback(*args, **kwargs)
+  def playback(self, *args, rval, **kwargs):
+    return rval
 
   def record(self):
     super().record(notes={'name': self.recorder.name}, when=When.NA)

@@ -3,7 +3,7 @@ import json
 
 from .device import Device
 from .medium import RecordingMedium
-from .track_manager import TrackManager
+from .track import TrackManager
 from .tune import Tune
 from .what import What
 
@@ -13,6 +13,10 @@ class Cassette(RecordingMedium, Device):
 
       A Cassette is written to by a Recorder in RECORD mode and
       read from by a Recorder in PLAYBACK mode.
+
+      FIXME: Cassette should not be a Device.
+             Use DeviceProxy like RepositoryManager or
+             a CassetteDevice like Recorder/RecordingDevice.
   '''
 
   # TODO : Consider moving most of the implementation into RecordingMedium

@@ -5,18 +5,23 @@ Record and playback simple python CLI apps.
 See [examples](examples).
 Additional documentation forthcoming
 
-## Release Process
+## Getting Started
 
-    bumpversion ...
-    git push origin  # bitbucket
-    git checkout release
-    git merge -X theirs --squash master
-    git commit -m v$(cat version.txt)
-    git push public release:master  # github
-    git tag v$(cat version.txt)
-    git push public v$(cat version.txt)
-    git checkout master
-    git push origin v$(cat version.txt)
+Setup your development environment:
+
+    ./dev-setup.sh
+
+Run the examples:
+
+    examples/ex001.py
+    # ...
+    examples/ex005.py
+
+Playback the recordings:
+
+    ./rekorder.sh playback --input ex001.json
+    # ...
+    ./rekorder.sh playback --input ex005.json
 
 ## File Format
 
@@ -56,3 +61,17 @@ Tune
         "time": time.time()
       }
     }
+
+
+## Release Process
+
+    bumpversion ...
+    git push origin  # bitbucket
+    git checkout release
+    git merge -X theirs --squash master
+    git commit -m v$(cat version.txt)
+    git push public release:master  # github
+    git tag v$(cat version.txt)
+    git push public v$(cat version.txt)
+    git checkout master
+    git push origin v$(cat version.txt)

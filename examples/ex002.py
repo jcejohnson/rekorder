@@ -1,3 +1,5 @@
+#!venv/bin/python
+
 '''Illustrates non-decorator usage.
 '''
 

@@ -1,5 +1,20 @@
 # rekorder changelog
 
+0.4.0
+-----
+- Implement RepositoryState.playback() so that MethodRepository.before() can restore the state of repositories during playback validation.
+- Rename & relocate for consistency:
+  - rekorder/lib/device.py -> rekorder/lib/device/device.py
+  - rekorder/lib/manager.py -> rekorder/lib/device/manager.py
+  - rekorder/lib/repository.py -> rekorder/lib/repository/state.py
+  - rekorder/lib/track_manager.py -> rekorder/lib/track/manager.py
+  - rekorder/lib/track.py -> rekorder/lib/track/track.py
+- Put each class into its own file to keep things bite-sized.
+- RecordableDeviceManager is now DeviceManager.
+- Removed the very confusing playback() method from Recorder. RecordingDevice handles playback entirely now.
+- Add OneShot wrapper to enforce one-invocation-per-instance for some methods (see RepositoryManager.record())
+
+
 0.3.0
 -----
 - Added DeviceProxy marker interface for classes that want to proxy (wrap) Device instances.
@@ -13,7 +28,7 @@
 - Recorder.repository_state is now Recorder.repository_manager
 - repository.Repository class is now repository.RepositoryManager
 
-0.3.0
+0.2.0
 -----
 - Initial playback implementation.
 - Initial validate-on-playback implementation (only tested on ex001.py in this version).

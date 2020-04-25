@@ -13,18 +13,24 @@ class Track:
 
   @staticmethod
   def recordable_data(obj):
-    return {
+    r = {
         'index': obj.index,
         'title': obj.title,
         'tunes': obj.tunes
     }
+    # if obj.sub_track:
+    #   r['sub_track'] = Track.recordable_data(obj.sub_track)
+    return r
 
-  def __init__(self, index, title, tunes=None, mode=What.RECORD):
+  def __init__(self, index, title, tunes=None, mode=What.RECORD, parent=None):
     super().__init__()
 
+    self.current_tune = None
     self.mode = mode
     self.index = index
     self.title = title
+    self.parent = parent
+    self.sub_track = None
     self.tunes = [
         Tune.playback_instance(t, mode=self.mode) for t in tunes
     ] if tunes else []

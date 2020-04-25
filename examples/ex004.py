@@ -1,6 +1,6 @@
 #!venv/bin/python
 
-'''Illustrate basic / typical usage of Recorder.
+'''Illustrates basic rekorder usage with nested methods and exception recording.
 '''
 
 import os

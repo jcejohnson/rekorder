@@ -1,5 +1,21 @@
 # rekorder changelog
 
+0.5.0
+-----
+- Implement @recorder.method.rval(mock=True).
+  - This disables recording until the function returns.
+    (In a future version I hope have a nested track within the MethodReturn tune where mock is True.)
+  - On playback, the return value is provided without calling the function.
+  - Added ex006 to show basic usage of this
+- @recorder.method.rval now records BEFORE and AFTER state. `rval` will always be _null_ at BEFORE.
+  (I hope to remove the BEFORE in a future version.)
+*Breaking Changes*
+- @recorder.method.rval now defaults to When.AROUND.
+  Anything deriving from MethodReturn must override `__call__()` to preserve the original behavior. (See RecordingEnd)
+- The new `mock` recording state is allowed for all Devices by default.
+- Device no longer sets self.when in `__init__()`. self.when is only relevant to methods and now set by `Decorator.__call__()`.
+- `Decorator._baa()` now passes _target_ to `self.record(notes=notes, when=target)`. This means record() will get When.BEFORE or When.AFTER instead of When.AROUND.
+
 0.4.0
 -----
 - Implement RepositoryState.playback() so that MethodRepository.before() can restore the state of repositories during playback validation.

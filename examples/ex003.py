@@ -23,7 +23,7 @@ def main():
   print("End [{}]".format(__name__))
 
 
-@recorder.method.repository
+@recorder.method.repository     # Capture the state of repository at '.'
 @recorder.method.params         # Capture foo's parameters before invocation.
 @recorder.method.pass_recorder  # This should be "closest" to the function
 #                               # because a Recorder cannot be serialized.

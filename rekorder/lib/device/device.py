@@ -38,7 +38,7 @@ class Device:
                             self.mode, self.record.mode))
 
     # Most devices will wrap function calls so we treat 'when' as a core attribute.
-    self.when = kwargs.get('when', When.NA)
+    # self.when = kwargs.get('when', When.NA)
 
     # Figure out which function describe_device() should delegate to in order
     # to describe this device.
@@ -142,7 +142,7 @@ class Device:
         Almost all devices are recordable in he 'recording' track, so that's
         our default.
     '''
-    return track_title == 'recording'
+    return track_title in ['recording', 'mock']
 
   def __validate__(self, *args, notes, when, **kwargs):
     '''Replaces record() in VALIDATE mode.

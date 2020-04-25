@@ -116,8 +116,12 @@ class Cassette(RecordingMedium, Device):
       # header (configuration) state. There is no way to use that information
       # to configure the system on playback.
       if not tune.device.recordable(current_track.title):
-        raise Exception("[{}] is not recordable on track [{}]".format(
-            tune.device, current_track.title))
+        try:
+          raise Exception("[{}] is not recordable on track [{}]".format(
+              tune.device, current_track.title))
+        except Exception as e:
+          raise Exception("[{}] is not recordable on track [{}]".format(
+              repr(tune.device), current_track.title))
 
     current_track.add(tune)
 

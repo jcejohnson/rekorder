@@ -1,4 +1,5 @@
 
+from ..what import What
 from ..when import When
 
 from .decorator import Decorator
@@ -36,34 +37,79 @@ class MethodReturn(Decorator):
     return True
 
   def describe_playable_device(self):
-    return "{} {}.{}(...) -> [{}]".format(
+    return "{} {}.{}(...) [mock:{}] -> [{}]".format(
         self.__class__.__name__,
         self.function['module'],
         self.function['name'],
+        self.function['mock'],
         self.function['rval']
     )
 
   def describe_recordable_device(self):
-    return "{} {}.{}(...) -> [{}]".format(
+    return "{} {}.{}(...) [mock:{}] -> [{}]".format(
         self.__class__.__name__,
         self.function.__module__,
         self.function.__name__,
+        self.mock,
         self.rval
     )
 
   def before(self):
-    return self.silence()
-
-  def around(self, when):
-    return self.silence()
-
-  def after(self):
-    # Similar to the default behavior but without args & kwargs.
-    r = super().after()
+    r = super().before()
+    r['function']['mock'] = self.mock
+    r['function']['rval'] = None
+    # Remove args & kwargs that were provided by super().after()
     del(r['function']['args'])
     del(r['function']['kwargs'])
     return r
 
-  def __call__(self, function):
-    # rval only has meaning after a function's invocation
-    return super().__call__(function=function, when=When.AFTER)
+  def after(self):
+    r = super().after()
+    r['function']['mock'] = self.mock
+    # Remove args & kwargs that were provided by super().after()
+    del(r['function']['args'])
+    del(r['function']['kwargs'])
+    return r
+
+  def around(self, when):
+
+    if when == When.BEFORE:
+      if self.mock:
+        self.recorder.recording_medium.track_manager.sub_track_begin('mock')
+      return self.before()
+
+    if when == When.AFTER:
+      if self.mock and self.mode == What.RECORD:
+        self.recorder.recording_medium.track_manager.sub_track_conclude('mock')
+      return self.after()
+
+    raise Exception("Programmer error: when = {}".format(when))
+
+  def invoke(self):
+
+    if not (self.mode == What.VALIDATE and self.mock):
+      return super().invoke()
+
+    self.recorder.recording_medium.track_manager.sub_track_conclude('mock')
+    self.playback_expectation = self.recorder.recording_medium.track_manager.current_track.next_tune()
+    return self.playback_expectation.notes['function']['rval']
+
+  def validate(self, when, **kwargs):
+
+    if 'expectation' in kwargs:
+      # Possibly recursion.
+      # The only time kwargs should contain 'expectation' is when we call
+      # super().validate() from this method.
+      raise Exception("Programmer error.")
+
+    if not self.mock:
+      return super().validate(when=when, **kwargs)
+
+    if when == When.AFTER:
+      return super().validate(expectation=self.playback_expectation, when=when, **kwargs)
+
+    return
+
+  def __call__(self, function=None, mock=False, when=When.AROUND, **moar):
+    self.mock = mock
+    return super().__call__(function=function, when=when)

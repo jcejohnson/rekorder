@@ -206,13 +206,15 @@ class Decorator(Device):
 
   def __call__(self, function=None, *, when=When.NA, **moar):
 
+    self.when = when
+
     def wrapper(f):
 
       self.function = f
 
       def wrapper_inner(*args, **kwargs):
 
-        self.args, self.kwargs = args, kwargs
+        self.args, self.kwargs, self.rval = args, kwargs, None
 
         self.intro(**moar)
 
@@ -243,8 +245,9 @@ class Decorator(Device):
     else:
       return
 
-    # record (and possibly validate) the notes from the device.
-    self.record(notes=notes, when=when)
+    # record the notes from the device when mode is RECORD
+    # validate the notes from the device against the recorded notes when when mode is VALIDATE.
+    self.record(notes=notes, when=target)
 
   # Device
 

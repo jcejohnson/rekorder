@@ -1,7 +1,6 @@
 
 from ..method import MethodReturn
 from ..what import What
-from ..when import When
 
 
 class RecordingEnd(MethodReturn):
@@ -28,11 +27,6 @@ class RecordingEnd(MethodReturn):
       return super().describe_device() + " @ [{}]".format(self.timestamp.localtime)
     return super().describe_device()
 
-  def after(self):
-    r = super().after()
-    del(r['function']['mock'])
-    return r
-
   def playback(self, *args, **kwargs):
     if kwargs['rval'] != self.function['rval']:
       raise Exception("Expected [{}] got [{}]".format(self.function['rval'], kwargs['rval']))
@@ -57,6 +51,3 @@ class RecordingEnd(MethodReturn):
     '''RecordingBegin can only record its information to the header track.
     '''
     return track_title == 'exit'
-
-  def __call__(self, function=None, mock=False, **moar):
-    return super().__call__(function=function, when=When.AFTER)

@@ -8,6 +8,7 @@ from .exception import MethodException
 from .parameters import MethodParameters
 from .repository import MethodRepository
 from .rval import MethodReturn
+from .mock import MethodMock
 
 
 class Method(DeviceManager):
@@ -47,6 +48,7 @@ class Method(DeviceManager):
     self.exception = MethodException(recorder=recorder)
     self.repository = MethodRepository(recorder=recorder)
     self.pass_recorder = MethodPassRecorder(recorder=recorder)
+    self.mock = MethodMock(recorder=recorder)
 
   def xxxpass_recorder(self, function):
     '''Use this decorator to pass the Recorder instance to a method that is

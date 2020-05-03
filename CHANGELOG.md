@@ -1,5 +1,12 @@
 # rekorder changelog
 
+0.6.0
+-----
+- Implement @recorder.method.mock in place of @recorder.method.rval(mock=True)
+- Implement [quicktest.sh](quicktest.sh) to execute & playback all of the examples.
+*Breaking Changes*
+- Revert @recorder.method.rval to v0.4.0 behavior (i.e. - remove _mock_ parameter)
+
 0.5.0
 -----
 - Implement @recorder.method.rval(mock=True).

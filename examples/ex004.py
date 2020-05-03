@@ -34,7 +34,6 @@ def main(recorder):
   @recorder.method.params(when=When.AROUND)
   @recorder.method.rval
   @recorder.method.exception
-  # @recorder.method.mockme  # Replace with a mock object in playback
   def baz(a, b, c=99):
     print("baz!!!")
     if isinstance(c, list):

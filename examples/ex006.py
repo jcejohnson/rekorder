@@ -28,7 +28,8 @@ def main():
 
 
 @recorder.method.params          # Capture foo's parameters before invocation.
-@recorder.method.rval(mock=True)  # Capture foo's return value.
+#                                # params is more or less redundant when mock is used.
+@recorder.method.mock            # Mock the method call on playback.
 @recorder.method.pass_recorder   # This should be "closest" to the function
 #                                # because a Recorder cannot be serialized.
 def foo(rec, *args, **kwargs):
